@@ -1,0 +1,122 @@
+import matplotlib.pyplot as plt
+import networkx as nx
+import random
+
+"""
+generowanie list do sporządzenia słownika
+lista_krawedzi 
+"""
+wierzcholki = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+def lista_wierzcholkow(wierzcholki):
+    lista_krawedzi = []
+    for i in range(8):
+        n = 0
+        y = []
+        while n < random.choice(range(1, 5)):
+            litera = random.choice(wierzcholki)
+            if litera not in y:
+                y.append(litera)
+            n += 1
+        lista_krawedzi.append(y)
+    return lista_krawedzi
+
+"""
+konwersja słownika na liste krawędzi
+lista krawędzi użyta póżniej do sporządzenia grafu
+"""
+def konwert_ls(l):
+    lista = []
+    for a in l:
+        i = 0
+        if len(l[a]) == 0:
+            lista.append([a, a])
+        while i < len(l[a]):
+            x = l[a][i]
+            lista.append([a, x])
+            i += 1
+    return lista
+
+"""
+wizualizacja grafu
+"""
+def rysuj(x):
+    G = nx.Graph()
+
+    for i in x:
+        G.add_edge(i[0], i[1])
+
+    pos = nx.circular_layout(G)
+    nx.draw(G, pos, with_labels=True, node_color='lightblue')
+    plt.show()
+
+    return G
+
+"""
+liczenie odległości od wierzchołka startowego
+zwraca słownik odległości
+"""
+def odleglosci_graf(graf, start):
+    odleglosci = {wierzcholek: -1 for wierzcholek in graf}
+    odleglosci[start] = 0
+    kolejka = [start]
+    while kolejka:
+        obecny = kolejka.pop(0)
+        for sasiad in graf[obecny]:
+            if odleglosci[sasiad] == -1:
+                odleglosci[sasiad] = odleglosci[obecny] + 1
+                kolejka.append(sasiad)
+    return odleglosci
+
+
+"""
+tworzenie słownika grupującego odległości od wierzchołka startowego
+zwraca słownik poziomów odległości
+"""
+def poziomy_odleglosci(odleglosci):
+
+    warstwy = {}
+    for wierzcholek in odleglosci:
+        odleglosc = odleglosci[wierzcholek]
+        if not odleglosc in warstwy:
+            warstwy[odleglosc] = []
+        warstwy[odleglosc].append(wierzcholek)
+
+    myKeys = list(warstwy.keys())
+    myKeys.sort()
+    sorted_dict = {i: warstwy[i] for i in myKeys}
+
+    return sorted_dict
+"""
+funkcja sprawdzająca symetryczność celem uzupełnienia brakujących krawedzi
+zwraca poprawiony słownik
+"""
+def czy_symetryczny(graf):
+    wyn = []
+    for x in graf:
+        for y in graf[x]:
+            if not x in graf[y]:
+                wyn.append((x,y))
+    return wyn
+
+def uzupelnij_przeciwbiezne(graf, krawedzie):
+
+    for kr in krawedzie:
+       assert kr[0] in graf
+       assert kr[1] in graf
+       graf[kr[1]].append(kr[0])
+    return graf
+
+
+x = lista_wierzcholkow(wierzcholki)
+slownik = dict(zip(wierzcholki, x))
+symetrycznosc = czy_symetryczny(slownik)
+nowy_slownik = uzupelnij_przeciwbiezne(slownik, symetrycznosc)
+
+odleglosc = odleglosci_graf(nowy_slownik, 'a')
+print("odległości\n", odleglosc)
+
+poziom_odl = poziomy_odleglosci(odleglosc)
+print("poziom odległości\n", poziom_odl)
+
+graf = konwert_ls(nowy_slownik)
+rysuj(graf)
